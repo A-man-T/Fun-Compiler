@@ -7,6 +7,10 @@ fun f1(x,y,z){
     }
 }
 
+fun printf(x){
+    print(x)
+}
+
 #random comment
 
 fun f2(x,y,z){
@@ -79,6 +83,7 @@ fun main(){
     print (!1)
     print (!!1)
     print (a)
+    printf(15)
 }
 #random comment w new line
 
