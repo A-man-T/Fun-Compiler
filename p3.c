@@ -2,7 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 int main() {
+
+
+    
     // reads the fun program from stdin
     puts("    .data");
     puts("format: .byte '%', 'd', 10, 0");
@@ -19,3 +23,4 @@ int main() {
 
     return 0;
 }
+
