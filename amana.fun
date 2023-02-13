@@ -7,6 +7,8 @@ fun f1(x,y,z){
     }
 }
 
+#random comment
+
 fun f2(x,y,z){
     while (x!=50){
         x = x+1
@@ -78,3 +80,6 @@ fun main(){
     print (!!1)
     print (a)
 }
+#random comment w new line
+
+#random comment w no new line
