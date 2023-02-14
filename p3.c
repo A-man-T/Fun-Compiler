@@ -735,8 +735,8 @@ int main()
 
 
 
-
-    //run(&x);
+    Interpreter x = newInterp(prog);
+    run(&x);
     return 0;
 }
 
