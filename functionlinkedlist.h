@@ -9,7 +9,7 @@ typedef struct functionNode
 {
     Slice key;
     struct functionNode *next;
-    char const *location;
+    char  *location;
     Slice *params;
     uint64_t numParams;
 
@@ -18,7 +18,7 @@ typedef struct functionNode
 struct functionNode *functionHead; // global variable - pointer to head node.
 
 // Creates a new Node and returns pointer to it.
-struct functionNode *getNewFunctionNode(Slice k, char const *ptr, uint64_t v)
+struct functionNode *getNewFunctionNode(Slice k, char  *ptr, uint64_t v)
 {
     struct functionNode *newNode = (struct functionNode *)malloc(sizeof(struct functionNode));
     newNode->key = k;
@@ -30,7 +30,7 @@ struct functionNode *getNewFunctionNode(Slice k, char const *ptr, uint64_t v)
 }
 
 // Inserts a Node at tail of linked list
-void insertFunction(Slice k, char const *ptr, uint64_t v)
+void insertFunction(Slice k, char  *ptr, uint64_t v)
 {
 
     if (functionHead == NULL)

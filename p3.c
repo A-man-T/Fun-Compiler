@@ -23,8 +23,8 @@ bool returned;
 
 typedef struct Interpreter
 {
-    char const *const program;
-    char const *current;
+    char *program;
+    char *current;
 } Interpreter;
 
 uint64_t expression(bool effects, Interpreter *interp);
@@ -39,15 +39,15 @@ void skip(Interpreter *interp)
     }
 }
 
-bool consume(const char *str, Interpreter *interp)
+bool consume(char *str, Interpreter *interp)
 {
     skip(interp);
 
     size_t i = 0;
     while (true)
     {
-        char const expected = str[i];
-        char const found = interp->current[i];
+        char expected = str[i];
+        char found = interp->current[i];
         if (expected == 0)
         {
             /* survived to the end of the expected string */
@@ -101,7 +101,7 @@ void end_or_fail(Interpreter *interp)
         fail(interp);
 }
 
-void consume_or_fail(const char *str, Interpreter *interp)
+void consume_or_fail(char *str, Interpreter *interp)
 {
     if (!consume(str, interp))
     {
@@ -115,7 +115,7 @@ optionalSlice consume_identifier(Interpreter *interp)
 
     if (isalpha(*interp->current))
     {
-        char const *start = interp->current;
+        char *start = interp->current;
         do
         {
             interp->current += 1;
@@ -154,7 +154,7 @@ optionalInt consume_literal(Interpreter *interp)
     }
 }
 
-Interpreter newInterp(char const *prog)
+Interpreter newInterp(char *prog)
 {
     Interpreter i1 = {prog, prog};
     return i1;
@@ -176,10 +176,16 @@ uint64_t e1(bool effects, Interpreter *interp)
     optionalInt v = consume_literal(interp);
     if (v.hasValue)
     {
+        printf("      mov $%lu,%%r13\n", v.value);
+        puts("      push %r13");
+
+        // puts("      mov $" (char)v);
         return v.value;
     }
 
     optionalSlice id = consume_identifier(interp);
+
+    
 
     if (id.hasValue)
     {
@@ -187,11 +193,17 @@ uint64_t e1(bool effects, Interpreter *interp)
         if (equals(id.value, "print") && consume("(", interp))
         {
 
-            uint64_t v = expression(effects, interp);
-            printf("%" PRIu64 "\n", v);
+            expression(effects, interp);
+
+            puts("      call ._print");
+            puts("      pop %r13");
             consume(")", interp);
             return 0;
         }
+
+//keep going from here
+
+
         // Calls a function
         if (consume("(", interp))
         {
@@ -233,14 +245,31 @@ uint64_t e2(bool effects, Interpreter *interp)
     {
         counter++;
     }
+    e1(effects, interp);
     if (counter == 0)
-        return e1(effects, interp);
+        return 0;
     else if (counter % 2 == 0)
     {
-        return !!e1(effects, interp);
+        puts("      pop %rax");
+        puts("      test %rax,%rax");
+        puts("      mov $0,%rax");
+        puts("      setz %al");
+        puts("      push %rax");
+        puts("      pop %rax");
+        puts("      test %rax,%rax");
+        puts("      mov $0,%rax");
+        puts("      setz %al");
+        puts("      push %rax");
+        return 0;
     }
-    else
-        return !e1(effects, interp);
+    else{
+        puts("      pop %rax");
+        puts("      test %rax,%rax");
+        puts("      mov $0,%rax");
+        puts("      setz %al");
+        puts("      push %rax");
+        return 0;
+    }
 }
 
 // * / % (Left)
@@ -252,17 +281,29 @@ uint64_t e3(bool effects, Interpreter *interp)
     {
         if (consume("*", interp))
         {
-            v = v * e2(effects, interp);
+            e2(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      imul %rdx, %rax");
+            puts("      push %rax");
         }
         else if (consume("/", interp))
         {
-            uint64_t right = e2(effects, interp);
-            v = (right == 0) ? 0 : v / right;
+            e2(effects, interp);
+            puts("      xor %rdx,%rdx");
+            puts("      pop %rdi");
+            puts("      pop %rax");
+            puts("      divq %rdi");
+            puts("      push %rax");
         }
         else if (consume("%", interp))
         {
-            uint64_t right = e2(effects, interp);
-            v = (right == 0) ? 0 : v % right;
+            e2(effects, interp);
+            puts("      xor %rdx,%rdx");
+            puts("      pop %rdi");
+            puts("      pop %rax");
+            puts("      divq %rdi");
+            puts("      push %rdx");
         }
         else
         {
@@ -280,11 +321,20 @@ uint64_t e4(bool effects, Interpreter *interp)
     {
         if (consume("+", interp))
         {
-            v = v + e3(effects, interp);
+
+            e3(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      add %rdx, %rax");
+            puts("      push %rax");
         }
         else if (consume("-", interp))
         {
-            v = v - e3(effects, interp);
+            e3(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      sub %rdx, %rax");
+            puts("      push %rax");
         }
         else
         {
@@ -308,19 +358,45 @@ uint64_t e6(bool effects, Interpreter *interp)
     {
         if (consume("<=", interp))
         {
-            v = (v <= e5(effects, interp));
+            e5(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      setbe %al");
+            puts("      push %rax");
+
+            //v = (v <= e5(effects, interp));
         }
         else if (consume("<", interp))
         {
-            v = (v < e5(effects, interp));
+            e5(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      setb %al");
+            puts("      push %rax");
         }
         else if (consume(">=", interp))
         {
-            v = (v >= e5(effects, interp));
+            e5(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      setae %al");
+            puts("      push %rax");
         }
         else if (consume(">", interp))
         {
-            v = (v > e5(effects, interp));
+            e5(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      seta %al");
+            puts("      push %rax");
         }
         else
         {
@@ -339,11 +415,23 @@ uint64_t e7(bool effects, Interpreter *interp)
     {
         if (consume("==", interp))
         {
-            v = (v == e6(effects, interp));
+            e6(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      sete %al");
+            puts("      push %rax");
         }
         else if (consume("!=", interp))
         {
-            v = (v != e6(effects, interp));
+            e6(effects, interp);
+            puts("      pop %rdx");
+            puts("      pop %rax");
+            puts("      cmp %rdx, %rax");
+            puts("      mov $0,%rax");
+            puts("      setne %al");
+            puts("      push %rax");
         }
         else
         {
@@ -380,7 +468,19 @@ uint64_t e11(bool effects, Interpreter *interp)
     {
         if (consume("&&", interp))
         {
-            v = (e10(effects, interp) && v);
+            e10(effects,interp);
+            puts("      pop %rdi");
+            puts("      pop %rax");
+            puts("      test %rax,%rax");
+            puts("      mov $0,%rax");
+            puts("      setnz %al");
+            puts("      test %rdi,%rdi");
+            puts("      mov $0,%rdi");
+            puts("      setnz %dil");
+            puts("      and %rdi,%rax");
+            puts("      push %rax");
+
+            
         }
         else
         {
@@ -398,7 +498,18 @@ uint64_t e12(bool effects, Interpreter *interp)
     {
         if (consume("||", interp))
         {
-            v = (e11(effects, interp) || v);
+            e11(effects,interp);
+            puts("      pop %rdi");
+            puts("      pop %rax");
+            puts("      test %rax,%rax");
+            puts("      mov $0,%rax");
+            puts("      setnz %al");
+            puts("      test %rdi,%rdi");
+            puts("      mov $0,%rdi");
+            puts("      setnz %dil");
+            puts("      or %rdi,%rax");
+            puts("      push %rax");
+
         }
         else
         {
@@ -438,15 +549,17 @@ bool statement(bool effects, Interpreter *interp)
     {
 
         // print ...
-        uint64_t v = expression(effects, interp);
-        printf("%" PRIu64 "\n", v);
+        expression(effects, interp);
+
+        puts("      call ._print");
+        puts("      pop %r13");
         consume(")", interp);
         return true;
     }
     // Stores the function information in the function linkedlist
     else if (equals(id.value, "fun"))
     {
-        char const *ptr = interp->current;
+        char *ptr = interp->current;
         optionalSlice v = consume_identifier(interp);
         uint64_t numParams = 0;
         consume("(", interp);
@@ -497,7 +610,7 @@ bool statement(bool effects, Interpreter *interp)
                 return false;
             }
             consume("}", interp);
-            char const *temp = interp->current;
+            char *temp = interp->current;
             if (consume("else", interp))
             {
                 if (consume("{", interp))
@@ -513,7 +626,7 @@ bool statement(bool effects, Interpreter *interp)
         else
         {
             skipCurlyBraces(effects, interp);
-            char const *temp = interp->current;
+            char *temp = interp->current;
             if (consume("else", interp))
             {
                 if (consume("{", interp))
@@ -537,9 +650,9 @@ bool statement(bool effects, Interpreter *interp)
     }
     else if (equals(id.value, "while"))
     {
-        char const *reeval = interp->current;
+        char *reeval = interp->current;
         uint64_t v = expression(effects, interp);
-        char const *commands = interp->current;
+        char *commands = interp->current;
         while (v)
         {
             consume("{", interp);
@@ -608,7 +721,8 @@ bool statement(bool effects, Interpreter *interp)
 
 void statements(bool effects, Interpreter *interp)
 {
-    while (statement(effects, interp));
+    while (statement(effects, interp))
+        ;
 }
 
 void run(Interpreter *interp)
@@ -642,7 +756,7 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
         funcValues->filledTo = funcSpecs->numParams - 1;
     }
     consume(")", interp);
-    char const *oldLocation = interp->current;
+    char *oldLocation = interp->current;
     struct localScopeVariables *oldScope = localScope;
     localScope = funcValues;
 
@@ -669,9 +783,14 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
 int main()
 {
 
-    
-
-   
+    uint64_t inputLen = 10000;
+    char *prog = (char *)(malloc(sizeof((char *)inputLen)));
+    char c;
+    uint64_t index = 0;
+    while ((c = getchar()) != EOF)
+    {
+        prog[index++] = c;
+    }
 
     puts("    .data");
     puts("format: .byte '%', 'd', 10, 0");
@@ -690,14 +809,6 @@ int main()
     puts("      pop %rbp");
     puts("      retq");
 
-
-
-
-
-
-
-
-    
     puts("    .global main");
     puts("main:");
     puts("      push %rbp");
@@ -716,12 +827,6 @@ int main()
     puts("      retq");
 
     puts("._main:");
-    puts("      mov $10, %rax");
-    puts("      push %rax");
-    puts("      call ._print");
-    puts("      pop %rax");
-    puts("      retq");
-
 
     /*
     puts("    mov $0,%rax");
@@ -733,10 +838,10 @@ int main()
     puts("    ret");
     */
 
-
-
     Interpreter x = newInterp(prog);
     run(&x);
+
+    puts("      retq");
     return 0;
 }
 
