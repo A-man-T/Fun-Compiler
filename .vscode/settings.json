@@ -9,6 +9,8 @@
         "utility": "c",
         "optional": "c",
         "istream": "c",
-        "ostream": "c"
+        "ostream": "c",
+        "stdnoreturn.h": "c",
+        "stat.h": "c"
     }
 }

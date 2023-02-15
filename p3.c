@@ -1,4 +1,5 @@
 #include "cslice.h"
+#include "oldInterp.h"
 #include "linkedlist.h"
 #include "functionlinkedlist.h"
 #include "scope.h"
@@ -21,11 +22,9 @@ uint64_t globalReturnValue = 0;
 bool returned;
 int labelCounter = 0;
 
-typedef struct Interpreter
-{
-    char *program;
-    char *current;
-} Interpreter;
+struct Interpreter;
+
+
 
 uint64_t expression(bool effects, Interpreter *interp);
 void statements(bool effects, Interpreter *interp);
@@ -544,6 +543,27 @@ uint64_t e15(bool effects, Interpreter *interp)
 
 uint64_t expression(bool effects, Interpreter *interp)
 {
+    //check if all are nonalphabet if they are push onto stack and return
+    
+    char * ptr = interp->current;
+    bool noAlpha = 1;
+     while (!(*interp->current == '\n') && !(*interp->current == 0))
+        {
+            if(isalpha(*interp->current)){
+                noAlpha = 0;
+                break;
+            }
+            interp->current++;
+        }
+    interp->current = ptr;
+    if(noAlpha){
+        uint64_t v = Ie15(effects, interp);
+        printf("      mov $%lu,%%r13\n", v);
+        puts("      push %r13");
+        
+        return 0;
+    }
+    
     return e15(effects, interp);
 }
 
