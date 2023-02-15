@@ -690,11 +690,15 @@ bool statement(bool effects, Interpreter *interp)
         consume("}", interp);
         printf("        jmp .%i\n", currentLabelCounter + 1);
         printf(".%i:\n", currentLabelCounter);
+        char *ptr = interp->current;
         if (consume("else", interp)&&consume("{", interp))
         {
             
             statements(effects, interp);
             consume("}", interp);
+        }
+        else{
+            interp->current = ptr;
         }
         printf(".%i:\n", currentLabelCounter + 1);
 
