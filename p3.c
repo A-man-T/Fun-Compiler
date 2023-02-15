@@ -1,7 +1,5 @@
 #include "cslice.h"
 #include "oldInterp.h"
-#include "linkedlist.h"
-#include "functionlinkedlist.h"
 #include "scope.h"
 #include "optionalSlice.h"
 #include "optionalInt.h"
@@ -219,11 +217,7 @@ uint64_t e1(bool effects, Interpreter *interp)
             return tempHold;
         }
         // Effects is used to indicate if we are in a function, if we aren't effects = true, and we only check the globalScope
-        else if (effects)
-        {
-            uint64_t v = find(id.value).value;
-            return v;
-        }
+
         // Otherwise we check the local, then global, then insert into the local per the spec
         else
         {
@@ -240,8 +234,8 @@ uint64_t e1(bool effects, Interpreter *interp)
             printf("      mov %i(%%rbp),%%rdi", offset);
             printf("\n");
             puts("      push %rdi");
-            uint64_t x = find(id.value).value;
-            return x;
+            //uint64_t x = find(id.value).value;
+            return 1;
         }
     }
     else
@@ -830,31 +824,27 @@ bool statement(bool effects, Interpreter *interp)
         // x = ...
         if (consume("=", interp))
         {
-            uint64_t v = expression(effects, interp);
+            expression(effects, interp);
             // Runs if in global Scope
-            if (effects)
-            {
-                insert(id.value, v);
-            }
+
             // If in local Scope check if in local, then check global, then add to local
+
+            optionalInt v = findPosition(id.value);
+            int offset = 0;
+
+            if (v.value + 1 > localScope->numParams)
+            {
+                offset = -8 * (v.value + 1 - localScope->numParams);
+            }
             else
             {
-                optionalInt v = findPosition(id.value);
-                int offset = 0;
-
-                if (v.value + 1 > localScope->numParams)
-                {
-                    offset = -8 * (v.value + 1 - localScope->numParams);
-                }
-                else
-                {
-                    offset = 8 * (localScope->numParams - v.value + 1);
-                }
-                puts("      pop %rdi");
-
-                printf("      mov %%rdi,%i(%%rbp)\n", offset);
-                // uint64_t x = find(id.value).value;
+                offset = 8 * (localScope->numParams - v.value + 1);
             }
+            puts("      pop %rdi");
+
+            printf("      mov %%rdi,%i(%%rbp)\n", offset);
+            // uint64_t x = find(id.value).value;
+
             return true;
         }
         // Run a function
