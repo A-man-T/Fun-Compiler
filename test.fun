@@ -1,10 +1,9 @@
-fun f1(a,b,c){   
-        print(a)
-        
-        print(c)
-        print(b)
+fun f1(){   
+        print(1)
+        return 4
+        print(2)
     }
 
 fun main(){
-  f1(5,4,3)
+  f1()
 }

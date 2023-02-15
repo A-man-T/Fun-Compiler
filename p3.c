@@ -668,11 +668,15 @@ bool statement(bool effects, Interpreter *interp)
         return true;
     }
     // This allows the rest of the program to know that we need to return out of a fucntion
-    else if (!effects && equals(id.value, "return"))
+    else if (equals(id.value, "return"))
     {
-        globalReturnValue = expression(false, interp);
+        expression(false, interp);
+        puts("      pop %rax");
+        puts("      mov %rbp, %rsp");
+        puts("      pop %rbp");
+        puts("      retq");
         returned = true;
-        return false;
+        return true;
     }
     else if (equals(id.value, "if"))
     {
