@@ -662,6 +662,8 @@ bool statement(bool effects, Interpreter *interp)
         printf("      sub $%i,%%rsp \n", offset);
         puts("      pop %rbp");
         puts("      retq");
+        freeInside();
+        free(localScope);
 
         return true;
     }
@@ -933,7 +935,7 @@ int main()
 {
 
     uint64_t inputLen = 10000;
-    char *prog = (char *)(malloc(sizeof((char *)inputLen)));
+    char *prog = (char *)(malloc(sizeof(char)*inputLen));
     char c;
     uint64_t index = 0;
     while ((c = getchar()) != EOF)
