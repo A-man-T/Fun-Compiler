@@ -686,19 +686,18 @@ bool statement(bool effects, Interpreter *interp)
         puts("      pop %rdi");
         puts("      test %rdi,%rdi");
         printf("        jz .%i\n", currentLabelCounter);
-        statements(effects,interp);
-        consume("}",interp);
-        printf("        jmp .%i\n", currentLabelCounter+1);
+        statements(effects, interp);
+        consume("}", interp);
+        printf("        jmp .%i\n", currentLabelCounter + 1);
         printf(".%i:\n", currentLabelCounter);
-        if (consume("else", interp)){
-            consume("{",interp);
-            statements(effects,interp);
-            consume("}",interp);
+        if (consume("else", interp)&&consume("{", interp))
+        {
+            
+            statements(effects, interp);
+            consume("}", interp);
         }
-        printf(".%i:\n", currentLabelCounter+1);
-        
-        
-        
+        printf(".%i:\n", currentLabelCounter + 1);
+
         /*
         uint64_t v = expression(effects, interp);
         consume("{", interp);
