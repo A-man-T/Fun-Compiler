@@ -555,7 +555,7 @@ bool statement(bool effects, Interpreter *interp)
         {
             interp->current++;
         }
-        if(*interp->current == 0)
+        if (*interp->current == 0)
             return false;
     }
 
@@ -646,8 +646,8 @@ bool statement(bool effects, Interpreter *interp)
         interp->current = ptr;
 
         int offset = -8 * (localScope->filledTo + 1 - numParams);
-        //if (numParams == 0 && localScope->filledTo == 0)
-          //  offset = 0;
+        // if (numParams == 0 && localScope->filledTo == 0)
+        //   offset = 0;
 
         puts("      push %rbp");
         puts("      mov %rsp,%rbp");
@@ -677,6 +677,28 @@ bool statement(bool effects, Interpreter *interp)
     }
     else if (equals(id.value, "if"))
     {
+        int currentLabelCounter = labelCounter;
+        labelCounter++;
+        labelCounter++;
+        expression(effects, interp);
+        consume("{", interp);
+        puts("      pop %rdi");
+        puts("      test %rdi,%rdi");
+        printf("        jz .%i\n", currentLabelCounter);
+        statements(effects,interp);
+        consume("}",interp);
+        printf("        jmp .%i\n", currentLabelCounter+1);
+        printf(".%i:\n", currentLabelCounter);
+        if (consume("else", interp)){
+            consume("{",interp);
+            statements(effects,interp);
+            consume("}",interp);
+        }
+        printf(".%i:\n", currentLabelCounter+1);
+        
+        
+        
+        /*
         uint64_t v = expression(effects, interp);
         consume("{", interp);
 
@@ -726,25 +748,26 @@ bool statement(bool effects, Interpreter *interp)
                 }
             }
         }
+        */
         return true;
     }
     else if (equals(id.value, "while"))
     {
-        
+
         int currentLabelCounter = labelCounter;
         labelCounter++;
         labelCounter++;
-        printf(".%i:\n",currentLabelCounter);
+        printf(".%i:\n", currentLabelCounter);
         expression(effects, interp);
         consume("{", interp);
         puts("      pop %rdi");
         puts("      test %rdi,%rdi");
-        printf("        jz .%i\n",currentLabelCounter+1);
-        statements(effects,interp);
-        printf("        jmp .%i\n",currentLabelCounter);
-        printf(".%i:\n",currentLabelCounter+1);
+        printf("        jz .%i\n", currentLabelCounter + 1);
+        statements(effects, interp);
+        printf("        jmp .%i\n", currentLabelCounter);
+        printf(".%i:\n", currentLabelCounter + 1);
         consume("}", interp);
-        
+
         /*
         char *reeval = interp->current;
         uint64_t v = expression(effects, interp);

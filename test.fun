@@ -1,11 +1,10 @@
 fun main(){
-    n = 10
-    while(n>2){
-        n = n - 1
-        #print(n)
-        while(n>5){
-            print(n)
-            n = n-1
-        }
+    n = 10 
+    if(n!=10){
+        print(5)
     }
+    else{
+        print(6)
+    }
+
 }
