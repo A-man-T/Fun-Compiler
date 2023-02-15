@@ -24,8 +24,6 @@ int labelCounter = 0;
 
 struct Interpreter;
 
-
-
 uint64_t expression(bool effects, Interpreter *interp);
 void statements(bool effects, Interpreter *interp);
 void runFunction(bool effects, Interpreter *interp, optionalSlice id);
@@ -81,6 +79,17 @@ void skipCurlyBraces(bool effects, Interpreter *interp)
             interp->current += 1;
         }
     }
+}
+
+bool checkComments(Interpreter *interp)
+{
+    while (!(*interp->current == '\n') && !(*interp->current == 0))
+    {
+        interp->current++;
+    }
+    if (*interp->current == 0)
+        return false;
+    return true;
 }
 
 noreturn void fail(Interpreter *interp)
@@ -543,27 +552,29 @@ uint64_t e15(bool effects, Interpreter *interp)
 
 uint64_t expression(bool effects, Interpreter *interp)
 {
-    //check if all are nonalphabet if they are push onto stack and return
-    
-    char * ptr = interp->current;
+    // check if all are nonalphabet if they are push onto stack and return
+
+    char *ptr = interp->current;
     bool noAlpha = 1;
-     while (!(*interp->current == '\n') && !(*interp->current == 0))
+    while (!(*interp->current == '\n') && !(*interp->current == 0))
+    {
+        if (isalpha(*interp->current))
         {
-            if(isalpha(*interp->current)){
-                noAlpha = 0;
-                break;
-            }
-            interp->current++;
+            noAlpha = 0;
+            break;
         }
+        interp->current++;
+    }
     interp->current = ptr;
-    if(noAlpha){
+    if (noAlpha)
+    {
         uint64_t v = Ie15(effects, interp);
         printf("      mov $%lu,%%r13\n", v);
         puts("      push %r13");
-        
+
         return 0;
     }
-    
+
     return e15(effects, interp);
 }
 
@@ -571,13 +582,7 @@ bool statement(bool effects, Interpreter *interp)
 {
     if (consume("#", interp))
     {
-        while (!(*interp->current == '\n') && !(*interp->current == 0))
-        {
-            interp->current++;
-        }
-        if (*interp->current == 0)
-            return false;
-        return true;
+        return checkComments(interp);
     }
 
     optionalSlice id = consume_identifier(interp);
@@ -713,13 +718,14 @@ bool statement(bool effects, Interpreter *interp)
         printf("        jmp .%i\n", currentLabelCounter + 1);
         printf(".%i:\n", currentLabelCounter);
         char *ptr = interp->current;
-        if (consume("else", interp)&&consume("{", interp))
+        if (consume("else", interp) && consume("{", interp))
         {
-            
+
             statements(effects, interp);
             consume("}", interp);
         }
-        else{
+        else
+        {
             interp->current = ptr;
         }
         printf(".%i:\n", currentLabelCounter + 1);
@@ -955,7 +961,7 @@ int main()
 {
 
     uint64_t inputLen = 10000;
-    char *prog = (char *)(malloc(sizeof(char)*inputLen));
+    char *prog = (char *)(malloc(sizeof(char) * inputLen));
     char c;
     uint64_t index = 0;
     while ((c = getchar()) != EOF)

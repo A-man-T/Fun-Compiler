@@ -29,12 +29,59 @@ main:
       pop %rbx
       pop %rbp
       retq
-._main:
+._val:
       push %rbp
       mov %rsp,%rbp
       add $-8,%rsp 
       mov $7422,%r13
       push %r13
+      pop %rax
+      mov %rbp, %rsp
+      pop %rbp
+      retq
+      mov $0,%rax
+      sub $-8,%rsp 
+      pop %rbp
+      retq
+._main:
+      push %rbp
+      mov %rsp,%rbp
+      add $-8,%rsp 
+      mov $100000000,%r13
+      push %r13
+      pop %rdi
+      mov %rdi,-8(%rbp)
+.0:
+      mov -8(%rbp),%rdi
+      push %rdi
+      mov $0,%r13
+      push %r13
+      pop %rdx
+      pop %rax
+      cmp %rdx, %rax
+      mov $0,%rax
+      setne %al
+      push %rax
+      pop %rdi
+      test %rdi,%rdi
+        jz .1
+      call ._val
+      add $0,%rsp
+      mov -8(%rbp),%rdi
+      push %rdi
+      mov $1,%r13
+      push %r13
+      pop %rdx
+      pop %rax
+      sub %rdx, %rax
+      push %rax
+      pop %rdi
+      mov %rdi,-8(%rbp)
+        jmp .0
+.1:
+      call ._val
+      add $0,%rsp
+      push %rax
       call ._print
       pop %r13
       mov $0,%rax
