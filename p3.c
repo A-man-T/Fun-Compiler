@@ -16,7 +16,6 @@
 #include <stdnoreturn.h>
 #include <inttypes.h>
 
-
 uint64_t globalReturnValue = 0;
 // bool to keep track if the current function has returned
 bool returned;
@@ -185,8 +184,6 @@ uint64_t e1(bool effects, Interpreter *interp)
 
     optionalSlice id = consume_identifier(interp);
 
-    
-
     if (id.hasValue)
     {
         // Treats print as a function if evaluated as an expression
@@ -201,8 +198,7 @@ uint64_t e1(bool effects, Interpreter *interp)
             return 0;
         }
 
-//keep going from here
-
+        // keep going from here
 
         // Calls a function
         if (consume("(", interp))
@@ -223,13 +219,15 @@ uint64_t e1(bool effects, Interpreter *interp)
         {
             int offset = 0;
             optionalInt v = findPosition(id.value);
-            if(v.value+1>localScope->numParams){
-                 offset = -8*(v.value+1-localScope->numParams);
+            if (v.value + 1 > localScope->numParams)
+            {
+                offset = -8 * (v.value + 1 - localScope->numParams);
             }
-            else{
-                 offset = 8*(localScope->numParams-v.value+1);
+            else
+            {
+                offset = 8 * (localScope->numParams - v.value + 1);
             }
-            printf("      mov %i(%%rbp),%%rdi",offset);
+            printf("      mov %i(%%rbp),%%rdi", offset);
             printf("\n");
             puts("      push %rdi");
             uint64_t x = find(id.value).value;
@@ -270,7 +268,8 @@ uint64_t e2(bool effects, Interpreter *interp)
         puts("      push %rax");
         return 0;
     }
-    else{
+    else
+    {
         puts("      pop %rax");
         puts("      test %rax,%rax");
         puts("      mov $0,%rax");
@@ -374,7 +373,7 @@ uint64_t e6(bool effects, Interpreter *interp)
             puts("      setbe %al");
             puts("      push %rax");
 
-            //v = (v <= e5(effects, interp));
+            // v = (v <= e5(effects, interp));
         }
         else if (consume("<", interp))
         {
@@ -476,7 +475,7 @@ uint64_t e11(bool effects, Interpreter *interp)
     {
         if (consume("&&", interp))
         {
-            e10(effects,interp);
+            e10(effects, interp);
             puts("      pop %rdi");
             puts("      pop %rax");
             puts("      test %rax,%rax");
@@ -487,8 +486,6 @@ uint64_t e11(bool effects, Interpreter *interp)
             puts("      setnz %dil");
             puts("      and %rdi,%rax");
             puts("      push %rax");
-
-            
         }
         else
         {
@@ -506,7 +503,7 @@ uint64_t e12(bool effects, Interpreter *interp)
     {
         if (consume("||", interp))
         {
-            e11(effects,interp);
+            e11(effects, interp);
             puts("      pop %rdi");
             puts("      pop %rax");
             puts("      test %rax,%rax");
@@ -517,7 +514,6 @@ uint64_t e12(bool effects, Interpreter *interp)
             puts("      setnz %dil");
             puts("      or %rdi,%rax");
             puts("      push %rax");
-
         }
         else
         {
@@ -551,6 +547,16 @@ uint64_t expression(bool effects, Interpreter *interp)
 
 bool statement(bool effects, Interpreter *interp)
 {
+    if (consume("#", interp))
+    {
+        while (!(*interp->current == '\n') && !(*interp->current == 0))
+        {
+            interp->current++;
+        }
+        if(*interp->current == 0)
+            return false;
+    }
+
     optionalSlice id = consume_identifier(interp);
 
     if (equals(id.value, "print") && consume("(", interp))
@@ -568,8 +574,6 @@ bool statement(bool effects, Interpreter *interp)
     else if (equals(id.value, "fun"))
     {
 
-        
-        
         optionalSlice v = consume_identifier(interp);
         printf("._");
         printSlice(v.value);
@@ -585,11 +589,10 @@ bool statement(bool effects, Interpreter *interp)
             numParams++;
             consume(",", interp);
         }
-        //insertFunction(v.value, ptr, numParams);
-        //functionNode *toEdit = findFunction(v.value);
+        // insertFunction(v.value, ptr, numParams);
+        // functionNode *toEdit = findFunction(v.value);
 
         localScope = getNewLocalScope(numParams);
-
 
         interp->current = ptr;
         int currentVar = 0;
@@ -613,16 +616,17 @@ bool statement(bool effects, Interpreter *interp)
         {
             localScope->filledTo = numParams - 1;
         }
-       
+
         ptr = interp->current;
 
         optionalSlice varName;
         uint64_t countBraces = 1;
         while (countBraces != 0)
         {
-            if(varName = consume_identifier(interp),varName.hasValue){
-                if(consume("=",interp))
-                    insertLocal(varName.value,0);
+            if (varName = consume_identifier(interp), varName.hasValue)
+            {
+                if (consume("=", interp))
+                    insertLocal(varName.value, 0);
             }
             else if (consume("{", interp))
             {
@@ -639,31 +643,22 @@ bool statement(bool effects, Interpreter *interp)
         }
         interp->current = ptr;
 
-        int offset = -8*(localScope->filledTo+1-numParams);
-        if(numParams==0&&localScope->filledTo==0)
+        int offset = -8 * (localScope->filledTo + 1 - numParams);
+        if (numParams == 0 && localScope->filledTo == 0)
             offset = 0;
-        
+
         puts("      push %rbp");
         puts("      mov %rsp,%rbp");
-        printf("      add $%i,%%rsp \n",offset);
-
+        printf("      add $%i,%%rsp \n", offset);
 
         statements(false, interp);
 
-        consume("}",interp);
-        
+        consume("}", interp);
+
         puts("      mov $0,%rax");
-        printf("      sub $%i,%%rsp \n",offset);
+        printf("      sub $%i,%%rsp \n", offset);
         puts("      pop %rbp");
         puts("      retq");
-        
-      
-
-
-
-
-
-
 
         return true;
     }
@@ -772,25 +767,27 @@ bool statement(bool effects, Interpreter *interp)
             {
                 optionalInt v = findPosition(id.value);
                 int offset = 0;
-            
-            if(v.value+1>localScope->numParams){
-                 offset = -8*(v.value+1-localScope->numParams);
-            }
-            else{
-                 offset = 8*(localScope->numParams-v.value+1);
-            }
+
+                if (v.value + 1 > localScope->numParams)
+                {
+                    offset = -8 * (v.value + 1 - localScope->numParams);
+                }
+                else
+                {
+                    offset = 8 * (localScope->numParams - v.value + 1);
+                }
                 puts("      pop %rdi");
-                
-                printf("      mov %%rdi,%i(%%rbp)\n",offset);
-                //uint64_t x = find(id.value).value;
+
+                printf("      mov %%rdi,%i(%%rbp)\n", offset);
+                // uint64_t x = find(id.value).value;
             }
             return true;
         }
         // Run a function
-        
-        else 
+
+        else
         {
-            consume("(",interp);
+            consume("(", interp);
             runFunction(effects, interp, id);
             globalReturnValue = 0;
             return true;
@@ -822,20 +819,21 @@ void run(Interpreter *interp)
 void runFunction(bool effects, Interpreter *interp, optionalSlice id)
 {
     uint64_t args = 0;
-   
-    //push args
-    while(!consume(")",interp)){
-        expression(effects,interp);
-        consume(",",interp);
+
+    // push args
+    while (!consume(")", interp))
+    {
+        expression(effects, interp);
+        consume(",", interp);
         args++;
     }
     printf("        call ._");
     printSlice(id.value);
     printf("\n");
-    int offset = 8*args;
-    printf("      add $%i,%%rsp\n",offset);
+    int offset = 8 * args;
+    printf("      add $%i,%%rsp\n", offset);
 
-    //pop args
+    // pop args
 
     /*
     globalReturnValue = 0;
@@ -896,7 +894,7 @@ int main()
     {
         prog[index++] = c;
     }
-    prog[index++]=0;
+    prog[index++] = 0;
 
     puts("    .data");
     puts("format: .byte '%', 'l', 'u', 10, 0");
@@ -932,8 +930,7 @@ int main()
     puts("      pop %rbp");
     puts("      retq");
 
-
-    //puts("._main:");
+    // puts("._main:");
 
     /*
     puts("    mov $0,%rax");
@@ -948,7 +945,7 @@ int main()
     Interpreter x = newInterp(prog);
     run(&x);
 
-    //puts("      retq");
+    // puts("      retq");
     return 0;
 }
 
