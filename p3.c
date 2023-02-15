@@ -640,8 +640,7 @@ bool statement(bool effects, Interpreter *interp)
         interp->current = ptr;
 
         int offset = -8*(localScope->filledTo+1-numParams);
-        if(numParams==0)
-            offset = 0;
+        
         
         puts("      push %rbp");
         puts("      mov %rsp,%rbp");
@@ -899,7 +898,7 @@ int main()
     prog[index++]=0;
 
     puts("    .data");
-    puts("format: .byte '%', 'd', 10, 0");
+    puts("format: .byte '%', 'l', 'u', 10, 0");
     puts("    .text");
 
     puts("._print:");

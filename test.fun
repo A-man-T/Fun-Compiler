@@ -1,9 +1,12 @@
-fun f1(){   
-        print(1)
-        return 4
-        print(2)
-    }
+fun main() {
+    a = 1 + 2 + 3 + 4
+    b = 2 + 3 + a
+    c = a / b
+    d = a * c
 
-fun main(){
-  f1()
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    
 }
