@@ -992,6 +992,7 @@ int main()
 
     Interpreter x = newInterp(prog);
     run(&x);
+    free(prog);
 
     // puts("      retq");
     return 0;
