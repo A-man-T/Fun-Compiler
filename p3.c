@@ -557,6 +557,7 @@ bool statement(bool effects, Interpreter *interp)
         }
         if (*interp->current == 0)
             return false;
+        return true;
     }
 
     optionalSlice id = consume_identifier(interp);
