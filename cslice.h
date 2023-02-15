@@ -33,6 +33,15 @@ typedef struct Slice
   size_t len;        // How many characters in the string
 } Slice;
 
+
+  void printSlice(Slice slice){
+    
+    for(int i = 0; i<slice.len;i++){
+      printf("%c", slice.start[i]);
+    }
+
+}
+
 // Constructors
 inline Slice new_Slice(char const *const s, size_t const l)
 {

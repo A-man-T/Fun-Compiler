@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "cslice.h"
 #include "optionalInt.h"
+#include "scope.h"
 
 // This is a linkedlist to keep track of all of the functions and their key information: name, location, name and number of Params
 typedef struct functionNode
@@ -12,6 +13,7 @@ typedef struct functionNode
     char  *location;
     Slice *params;
     uint64_t numParams;
+    //localScopeVariables *variables;
 
 } functionNode;
 

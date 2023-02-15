@@ -15,7 +15,7 @@
 #include <stdbool.h>
 #include <stdnoreturn.h>
 #include <inttypes.h>
-// #include "p3.c"
+
 
 uint64_t globalReturnValue = 0;
 // bool to keep track if the current function has returned
@@ -221,9 +221,17 @@ uint64_t e1(bool effects, Interpreter *interp)
         // Otherwise we check the local, then global, then insert into the local per the spec
         else
         {
-            optionalInt v = findLocal(id.value);
-            if (v.hasValue)
-                return v.value;
+            int offset = 0;
+            optionalInt v = findPosition(id.value);
+            if(v.value+1>localScope->numParams){
+                 offset = -8*(v.value+1-localScope->numParams);
+            }
+            else{
+                 offset = 8*(localScope->numParams-v.value+1);
+            }
+            printf("      mov %i(%%rbp),%%rdi",offset);
+            printf("\n");
+            puts("      push %rdi");
             uint64_t x = find(id.value).value;
             return x;
         }
@@ -559,8 +567,15 @@ bool statement(bool effects, Interpreter *interp)
     // Stores the function information in the function linkedlist
     else if (equals(id.value, "fun"))
     {
-        char *ptr = interp->current;
+
+        
+        
         optionalSlice v = consume_identifier(interp);
+        printf("._");
+        printSlice(v.value);
+        printf(":");
+        printf("\n");
+        char *ptr = interp->current;
         uint64_t numParams = 0;
         consume("(", interp);
         // counts number of parameters
@@ -570,8 +585,12 @@ bool statement(bool effects, Interpreter *interp)
             numParams++;
             consume(",", interp);
         }
-        insertFunction(v.value, ptr, numParams);
-        functionNode *toEdit = findFunction(v.value);
+        //insertFunction(v.value, ptr, numParams);
+        //functionNode *toEdit = findFunction(v.value);
+
+        localScope = getNewLocalScope(numParams);
+
+
         interp->current = ptr;
         int currentVar = 0;
         consume_identifier(interp);
@@ -580,12 +599,72 @@ bool statement(bool effects, Interpreter *interp)
         while (!consume(")", interp))
         {
             optionalSlice c = consume_identifier(interp);
-            toEdit->params[currentVar] = c.value;
+            localScope->names[currentVar] = c.value;
             currentVar++;
             consume(",", interp);
         }
         consume("{", interp);
-        skipCurlyBraces(effects, interp);
+
+        if (numParams == 0)
+        {
+            localScope->filledTo = 0;
+        }
+        else
+        {
+            localScope->filledTo = numParams - 1;
+        }
+       
+        ptr = interp->current;
+
+        optionalSlice varName;
+        uint64_t countBraces = 1;
+        while (countBraces != 0)
+        {
+            if(varName = consume_identifier(interp),varName.hasValue){
+                if(consume("=",interp))
+                    insertLocal(varName.value,0);
+            }
+            else if (consume("{", interp))
+            {
+                countBraces++;
+            }
+            else if (consume("}", interp))
+            {
+                countBraces--;
+            }
+            else
+            {
+                interp->current += 1;
+            }
+        }
+        interp->current = ptr;
+
+        int offset = -8*(localScope->filledTo+1-numParams);
+        if(numParams==0)
+            offset = 0;
+        
+        puts("      push %rbp");
+        puts("      mov %rsp,%rbp");
+        printf("      add $%i,%%rsp \n",offset);
+
+
+        statements(false, interp);
+
+        consume("}",interp);
+        
+        puts("      mov $0,%rax");
+        printf("      sub $%i,%%rsp \n",offset);
+        puts("      pop %rbp");
+        puts("      retq");
+        
+      
+
+
+
+
+
+
+
         return true;
     }
     // This allows the rest of the program to know that we need to return out of a fucntion
@@ -687,34 +766,38 @@ bool statement(bool effects, Interpreter *interp)
             // If in local Scope check if in local, then check global, then add to local
             else
             {
-                optionalInt x = findLocal(id.value);
-                if (x.hasValue)
-                {
-                    insertLocal(id.value, v);
-                    return true;
-                }
-                else if (find(id.value).hasValue)
-                {
-                    insert(id.value, v);
-                }
-                else
-                {
-                    insertLocal(id.value, v);
-                }
+                optionalInt v = findPosition(id.value);
+                int offset = 0;
+            
+            if(v.value+1>localScope->numParams){
+                 offset = -8*(v.value+1-localScope->numParams);
+            }
+            else{
+                 offset = 8*(localScope->numParams-v.value+1);
+            }
+                puts("      pop %rdi");
+                
+                printf("      mov %%rdi,%i(%%rbp)\n",offset);
+                //uint64_t x = find(id.value).value;
             }
             return true;
         }
         // Run a function
-        else if (findFunction(id.value) != NULL)
+        
+        else 
         {
+            consume("(",interp);
             runFunction(effects, interp, id);
             globalReturnValue = 0;
             return true;
         }
+        /*
+        //if (findFunction(id.value) != NULL)
         else
         {
             fail(interp);
         }
+        */
     }
     return false;
 }
@@ -734,6 +817,23 @@ void run(Interpreter *interp)
 // code to run a function
 void runFunction(bool effects, Interpreter *interp, optionalSlice id)
 {
+    uint64_t args = 0;
+   
+    //push args
+    while(!consume(")",interp)){
+        expression(effects,interp);
+        consume(",",interp);
+        args++;
+    }
+    printf("        call ._");
+    printSlice(id.value);
+    printf("\n");
+    int offset = 8*args;
+    printf("      add $%i,%%rsp\n",offset);
+
+    //pop args
+
+    /*
     globalReturnValue = 0;
     returned = false;
     struct functionNode *funcSpecs = findFunction(id.value);
@@ -778,6 +878,7 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
     freeInside();
     free(localScope);
     localScope = oldScope;
+    */
 }
 
 int main()
@@ -791,6 +892,7 @@ int main()
     {
         prog[index++] = c;
     }
+    prog[index++]=0;
 
     puts("    .data");
     puts("format: .byte '%', 'd', 10, 0");
@@ -826,7 +928,8 @@ int main()
     puts("      pop %rbp");
     puts("      retq");
 
-    puts("._main:");
+
+    //puts("._main:");
 
     /*
     puts("    mov $0,%rax");
@@ -841,7 +944,7 @@ int main()
     Interpreter x = newInterp(prog);
     run(&x);
 
-    puts("      retq");
+    //puts("      retq");
     return 0;
 }
 

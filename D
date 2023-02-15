@@ -1,0 +1,90 @@
+    .data
+format: .byte '%', 'd', 10, 0
+    .text
+._print:
+      push %rbp
+      mov %rsp, %rbp
+      and $-16,%rsp
+      mov 16(%rbp), %rsi
+      lea format(%rip),%rdi
+      xor %rax,%rax
+      .extern printf
+      call printf
+      mov %rbp,%rsp
+      pop %rbp
+      retq
+    .global main
+main:
+      push %rbp
+      push %rbx
+      push %r12
+      push %r13
+      push %r14
+      push %r15
+      call ._main
+      pop %r15
+      pop %r14
+      pop %r13
+      pop %r12
+      pop %rbx
+      pop %rbp
+      retq
+._main:
+      mov $20,%r13
+      push %r13
+      mov $0,%r13
+      push %r13
+      mov $1,%r13
+      push %r13
+      mov $420,%r13
+      push %r13
+      call ._print
+      pop %r13
+      call ._print
+      pop %r13
+      call ._print
+      pop %r13
+      call ._print
+      pop %r13
+      mov $1,%r13
+      push %r13
+      pop %rax
+      test %rax,%rax
+      mov $0,%rax
+      setz %al
+      push %rax
+      call ._print
+      pop %r13
+      mov $1,%r13
+      push %r13
+      pop %rax
+      test %rax,%rax
+      mov $0,%rax
+      setz %al
+      push %rax
+      pop %rax
+      test %rax,%rax
+      mov $0,%rax
+      setz %al
+      push %rax
+      call ._print
+      pop %r13
+      call ._print
+      pop %r13
+      mov $1,%r13
+      push %r13
+      pop %rax
+      test %rax,%rax
+      mov $0,%rax
+      setz %al
+      push %rax
+      pop %rax
+      test %rax,%rax
+      mov $0,%rax
+      setz %al
+      push %rax
+      call ._print
+      pop %r13
+      call ._print
+      pop %r13
+      retq

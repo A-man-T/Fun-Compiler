@@ -11,11 +11,20 @@ typedef struct localScopeVariables
     Slice * names;
     uint64_t * values;
     uint64_t filledTo;
+    uint64_t numParams;
 
     
 } localScopeVariables;
 
 struct localScopeVariables *localScope = NULL;
+
+
+//Frees all the malloc memory
+void freeInsideScope(localScopeVariables *localScope){
+    free(localScope->names);
+    free(localScope->values);
+}
+
 
 //Frees all the malloc memory
 void freeInside(){
@@ -29,6 +38,7 @@ struct localScopeVariables *getNewLocalScope(uint64_t num){
     newScope-> names = (struct Slice *)malloc(sizeof(struct Slice)*num);
     newScope-> values = (uint64_t *)malloc(sizeof(uint64_t)*num);
     newScope->numVariables = num;
+    newScope->numParams = num;
     return newScope;
 }
 
@@ -75,4 +85,53 @@ optionalInt findLocal(Slice k){
     }
     optionalInt i1 = {false, 0};
     return i1;
+}
+
+
+optionalInt findPosition(Slice k){
+
+    uint64_t counter = 0;
+    for(uint64_t i = 0;i<=localScope->filledTo;i++){
+        if(equalsSlice(localScope->names[i],k)){
+            optionalInt i1 = {true, counter};
+            return i1;
+        }
+        counter++;
+    }
+    optionalInt i1 = {false, 0};
+    return i1;
+}
+
+
+
+void insertPrecompute(localScopeVariables *localScope,Slice k, uint64_t v){
+
+    for(uint64_t i = 0;i<=localScope->filledTo;i++){
+        if(equalsSlice(localScope->names[i],k)){
+            localScope->values[i]=v;
+            return;
+        }
+    }
+    
+    
+    //Resize the array
+    if(localScope->filledTo+1>=localScope->numVariables){
+        if(localScope->numVariables == 0){
+            localScope->numVariables++;
+            localScope->names = (struct Slice *)realloc(localScope->names,sizeof(struct Slice)*localScope->numVariables);
+            localScope-> values = (uint64_t *)realloc(localScope->values,sizeof(uint64_t)*localScope->numVariables);
+            localScope->names[localScope->filledTo] = k;
+            localScope->values[localScope->filledTo] = v;
+            return;
+        }
+        else{
+            localScope->numVariables = localScope->numVariables*2;
+            localScope->names = (struct Slice *)realloc(localScope->names,sizeof(struct Slice)*localScope->numVariables);
+            localScope-> values = (uint64_t *)realloc(localScope->values,sizeof(uint64_t)*localScope->numVariables);
+        }
+    }
+    localScope->filledTo++;
+    localScope->names[localScope->filledTo] = k;
+    localScope->values[localScope->filledTo] = v;
+    return;
 }
