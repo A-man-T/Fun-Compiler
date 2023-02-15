@@ -204,6 +204,7 @@ uint64_t e1(bool effects, Interpreter *interp)
         if (consume("(", interp))
         {
             runFunction(effects, interp, id);
+            puts("      push %rax");
             int64_t tempHold = globalReturnValue;
             globalReturnValue = 0;
             return tempHold;
@@ -827,7 +828,7 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
         consume(",", interp);
         args++;
     }
-    printf("        call ._");
+    printf("      call ._");
     printSlice(id.value);
     printf("\n");
     int offset = 8 * args;
