@@ -640,7 +640,8 @@ bool statement(bool effects, Interpreter *interp)
         interp->current = ptr;
 
         int offset = -8*(localScope->filledTo+1-numParams);
-        
+        if(numParams==0&&localScope->filledTo==0)
+            offset = 0;
         
         puts("      push %rbp");
         puts("      mov %rsp,%rbp");
