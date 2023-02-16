@@ -25,18 +25,20 @@ struct Interpreter;
 uint64_t expression(bool effects, Interpreter *interp);
 void statements(bool effects, Interpreter *interp);
 void runFunction(bool effects, Interpreter *interp, optionalSlice id);
-bool checkComments(Interpreter *interp);
+//bool checkComments(Interpreter *interp);
 
 void skip(Interpreter *interp)
 {
     while (isspace(*interp->current))
     {
+        /*
         // This code checks for a # at the start of the line and skips the line for comments
         if (*interp->current == '\n' && *(interp->current + 1) == '#')
         {
             interp->current++;
             checkComments(interp);
         }
+        */
 
         interp->current += 1;
     }
@@ -86,6 +88,7 @@ void skipCurlyBraces(bool effects, Interpreter *interp)
         }
     }
 }
+/*
 // Skips the interp->current to past the comment
 bool checkComments(Interpreter *interp)
 {
@@ -97,6 +100,7 @@ bool checkComments(Interpreter *interp)
         return false;
     return true;
 }
+*/
 
 noreturn void fail(Interpreter *interp)
 {
@@ -577,11 +581,13 @@ uint64_t expression(bool effects, Interpreter *interp)
 
 bool statement(bool effects, Interpreter *interp)
 {
+    /*
     // checks for comments
     if (consume("#", interp))
     {
         return checkComments(interp);
     }
+    */
 
     optionalSlice id = consume_identifier(interp);
 
@@ -831,9 +837,18 @@ int main()
     char *prog = (char *)(malloc(sizeof(char) * inputLen));
     char c;
     uint64_t index = 0;
+    bool comment = 0;
     while ((c = getchar()) != EOF)
     {
-        prog[index++] = c;
+        if(c=='#'){
+            comment = 1;
+        }
+        if(c=='\n'){
+            comment = 0;
+        }
+        if(!comment){
+            prog[index++] = c;
+        }
     }
     // null terminate
     prog[index++] = 0;

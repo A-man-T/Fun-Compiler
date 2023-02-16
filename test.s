@@ -52,7 +52,7 @@ main:
 .0:
       mov -8(%rbp),%rdi
       push %rdi
-      mov $10,%r13
+      mov $20000000,%r13
       push %r13
       pop %rdx
       pop %rax
