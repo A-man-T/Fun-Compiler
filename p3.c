@@ -31,11 +31,12 @@ void skip(Interpreter *interp)
 {
     while (isspace(*interp->current))
     {
-        if (*interp->current == '\n'&&*(interp->current+1)=='#'){
+        // This code checks for a # at the start of the line and skips the line for comments
+        if (*interp->current == '\n' && *(interp->current + 1) == '#')
+        {
             interp->current++;
             checkComments(interp);
         }
-            
 
         interp->current += 1;
     }
@@ -85,7 +86,7 @@ void skipCurlyBraces(bool effects, Interpreter *interp)
         }
     }
 }
-
+// Skips the interp->current to past the comment
 bool checkComments(Interpreter *interp)
 {
     while (!(*interp->current == '\n') && !(*interp->current == 0))
@@ -211,9 +212,7 @@ uint64_t e1(bool effects, Interpreter *interp)
             return 0;
         }
 
-        // keep going from here
-
-        // Calls a function
+        // Calls a function and puts the return value on the stack
         if (consume("(", interp))
         {
             runFunction(effects, interp, id);
@@ -222,9 +221,7 @@ uint64_t e1(bool effects, Interpreter *interp)
             globalReturnValue = 0;
             return tempHold;
         }
-        // Effects is used to indicate if we are in a function, if we aren't effects = true, and we only check the globalScope
-
-        // Otherwise we check the local, then global, then insert into the local per the spec
+        // Using the scope data calculates an offset to access the identifier
         else
         {
             int offset = 0;
@@ -264,6 +261,7 @@ uint64_t e2(bool effects, Interpreter *interp)
     e1(effects, interp);
     if (counter == 0)
         return 0;
+    // returns !!e1(effects,interp)
     else if (counter % 2 == 0)
     {
         puts("      pop %rax");
@@ -278,6 +276,7 @@ uint64_t e2(bool effects, Interpreter *interp)
         puts("      push %rax");
         return 0;
     }
+    // returns !e1(effects,interp)
     else
     {
         puts("      pop %rax");
@@ -382,8 +381,6 @@ uint64_t e6(bool effects, Interpreter *interp)
             puts("      mov $0,%rax");
             puts("      setbe %al");
             puts("      push %rax");
-
-            // v = (v <= e5(effects, interp));
         }
         else if (consume("<", interp))
         {
@@ -552,7 +549,7 @@ uint64_t e15(bool effects, Interpreter *interp)
 
 uint64_t expression(bool effects, Interpreter *interp)
 {
-    // check if all are nonalphabet if they are push onto stack and return
+    // check if all are nonalphabet if they are, use the interpreter to simply the value ("constant folding") push onto stack and return
 
     char *ptr = interp->current;
     bool noAlpha = 1;
@@ -580,6 +577,7 @@ uint64_t expression(bool effects, Interpreter *interp)
 
 bool statement(bool effects, Interpreter *interp)
 {
+    // checks for comments
     if (consume("#", interp))
     {
         return checkComments(interp);
@@ -602,6 +600,7 @@ bool statement(bool effects, Interpreter *interp)
     else if (equals(id.value, "fun"))
     {
 
+        // Prints the function label
         optionalSlice v = consume_identifier(interp);
         printf("._");
         printSlice(v.value);
@@ -610,6 +609,7 @@ bool statement(bool effects, Interpreter *interp)
         char *ptr = interp->current;
         uint64_t numParams = 0;
         consume("(", interp);
+
         // counts number of parameters
         while (!consume(")", interp))
         {
@@ -617,8 +617,6 @@ bool statement(bool effects, Interpreter *interp)
             numParams++;
             consume(",", interp);
         }
-        // insertFunction(v.value, ptr, numParams);
-        // functionNode *toEdit = findFunction(v.value);
 
         localScope = getNewLocalScope(numParams);
 
@@ -646,7 +644,7 @@ bool statement(bool effects, Interpreter *interp)
         }
 
         ptr = interp->current;
-
+        // Counts the number of variables used in the function
         optionalSlice varName;
         uint64_t countBraces = 1;
         while (countBraces != 0)
@@ -671,9 +669,8 @@ bool statement(bool effects, Interpreter *interp)
         }
         interp->current = ptr;
 
+        // Knowing how many variables are used, it subracts from the stack point to allow space for them on the stack
         int offset = -8 * (localScope->filledTo + 1 - numParams);
-        // if (numParams == 0 && localScope->filledTo == 0)
-        //   offset = 0;
 
         puts("      push %rbp");
         puts("      mov %rsp,%rbp");
@@ -692,7 +689,7 @@ bool statement(bool effects, Interpreter *interp)
 
         return true;
     }
-    // This allows the rest of the program to know that we need to return out of a fucntion
+    // Returns the top of the stack
     else if (equals(id.value, "return"))
     {
         expression(false, interp);
@@ -703,6 +700,10 @@ bool statement(bool effects, Interpreter *interp)
         returned = true;
         return true;
     }
+    // If loops workin the following way:
+    // Evaluate the condition and jump to the else label if it is false
+    // The else label is always present even if there is no else in the code
+    // If true it will continue until the last statement which will tell it to jump past the else label
     else if (equals(id.value, "if"))
     {
         int currentLabelCounter = labelCounter;
@@ -730,59 +731,10 @@ bool statement(bool effects, Interpreter *interp)
         }
         printf(".%i:\n", currentLabelCounter + 1);
 
-        /*
-        uint64_t v = expression(effects, interp);
-        consume("{", interp);
-
-        if (v)
-        {
-
-            statements(effects, interp);
-            if (returned)
-            {
-                // Stops the rest of the if statement
-                return false;
-            }
-            consume("}", interp);
-            char *temp = interp->current;
-            if (consume("else", interp))
-            {
-                if (consume("{", interp))
-                    skipCurlyBraces(effects, interp);
-                else
-                {
-                    interp->current = temp;
-                    return true;
-                }
-            }
-        }
-
-        else
-        {
-            skipCurlyBraces(effects, interp);
-            char *temp = interp->current;
-            if (consume("else", interp))
-            {
-                if (consume("{", interp))
-                {
-                    statements(effects, interp);
-                    if (returned)
-                    {
-
-                        return false;
-                    }
-
-                    consume("}", interp);
-                }
-                else
-                {
-                    interp->current = temp;
-                }
-            }
-        }
-        */
         return true;
     }
+    // While loops have a label and after testing the condition
+    // It will jump back to them
     else if (equals(id.value, "while"))
     {
 
@@ -800,28 +752,6 @@ bool statement(bool effects, Interpreter *interp)
         printf(".%i:\n", currentLabelCounter + 1);
         consume("}", interp);
 
-        /*
-        char *reeval = interp->current;
-        uint64_t v = expression(effects, interp);
-        char *commands = interp->current;
-        while (v)
-        {
-            consume("{", interp);
-            statements(effects, interp);
-            if (returned)
-            {
-                // returned = false;
-                return false;
-            }
-            consume("}", interp);
-            interp->current = reeval;
-            v = expression(effects, interp);
-        }
-
-        interp->current = commands;
-        consume("{", interp);
-        skipCurlyBraces(effects, interp);
-        */
         return true;
     }
 
@@ -831,13 +761,10 @@ bool statement(bool effects, Interpreter *interp)
         if (consume("=", interp))
         {
             expression(effects, interp);
-            // Runs if in global Scope
-
-            // If in local Scope check if in local, then check global, then add to local
 
             optionalInt v = findPosition(id.value);
             int offset = 0;
-
+            // Calculate the offset and move the value there
             if (v.value + 1 > localScope->numParams)
             {
                 offset = -8 * (v.value + 1 - localScope->numParams);
@@ -849,7 +776,6 @@ bool statement(bool effects, Interpreter *interp)
             puts("      pop %rdi");
 
             printf("      mov %%rdi,%i(%%rbp)\n", offset);
-            // uint64_t x = find(id.value).value;
 
             return true;
         }
@@ -862,13 +788,6 @@ bool statement(bool effects, Interpreter *interp)
             globalReturnValue = 0;
             return true;
         }
-        /*
-        //if (findFunction(id.value) != NULL)
-        else
-        {
-            fail(interp);
-        }
-        */
     }
     return false;
 }
@@ -890,7 +809,7 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
 {
     uint64_t args = 0;
 
-    // push args
+    // push params
     while (!consume(")", interp))
     {
         expression(effects, interp);
@@ -901,61 +820,13 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
     printSlice(id.value);
     printf("\n");
     int offset = 8 * args;
+    // Move stack pointer to ignore them once the funciton has returned
     printf("      add $%i,%%rsp\n", offset);
-
-    // pop args
-
-    /*
-    globalReturnValue = 0;
-    returned = false;
-    struct functionNode *funcSpecs = findFunction(id.value);
-    struct localScopeVariables *funcValues = getNewLocalScope(funcSpecs->numParams);
-    consume("(", interp);
-    // stores the params
-    for (uint64_t counter = 0; counter < funcSpecs->numParams; counter++)
-    {
-        uint64_t v = expression(effects, interp);
-        funcValues->values[counter] = v;
-        funcValues->names[counter] = funcSpecs->params[counter];
-        consume(",", interp);
-    }
-    if (funcSpecs->numParams == 0)
-    {
-        funcValues->filledTo = 0;
-    }
-    else
-    {
-        funcValues->filledTo = funcSpecs->numParams - 1;
-    }
-    consume(")", interp);
-    char *oldLocation = interp->current;
-    struct localScopeVariables *oldScope = localScope;
-    localScope = funcValues;
-
-    interp->current = funcSpecs->location;
-    consume_identifier(interp);
-    consume("(", interp);
-    while (!consume(")", interp))
-    {
-        consume_identifier(interp);
-        consume(",", interp);
-    }
-    consume("{", interp);
-
-    statements(false, interp);
-
-    returned = false;
-
-    interp->current = oldLocation;
-    freeInside();
-    free(localScope);
-    localScope = oldScope;
-    */
 }
 
 int main()
 {
-
+    // Read the file into a buffer
     uint64_t inputLen = 10000;
     char *prog = (char *)(malloc(sizeof(char) * inputLen));
     char c;
@@ -964,12 +835,13 @@ int main()
     {
         prog[index++] = c;
     }
+    // null terminate
     prog[index++] = 0;
 
     puts("    .data");
     puts("format: .byte '%', 'l', 'u', 10, 0");
     puts("    .text");
-
+    // All prints call this
     puts("._print:");
     puts("      push %rbp");
     puts("      mov %rsp, %rbp");
@@ -982,7 +854,7 @@ int main()
     puts("      mov %rbp,%rsp");
     puts("      pop %rbp");
     puts("      retq");
-
+    // To handle cases where main is called from main, which although not possible in FUN is a good edge case
     puts("    .global main");
     puts("main:");
     puts("      push %rbp");
@@ -1000,23 +872,9 @@ int main()
     puts("      pop %rbp");
     puts("      retq");
 
-    // puts("._main:");
-
-    /*
-    puts("    mov $0,%rax");
-    puts("    lea format(%rip),%rdi");
-    puts("    mov $42,%rsi");
-    puts("    .extern printf");
-    puts("    call printf");
-    puts("    mov $0,%rax");
-    puts("    ret");
-    */
-
     Interpreter x = newInterp(prog);
     run(&x);
     free(prog);
-
-    // puts("      retq");
     return 0;
 }
 
