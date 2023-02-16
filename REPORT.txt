@@ -51,7 +51,8 @@ Source: https://en.cppreference.com/w/c/variadic
 
 The -static gcc flag tells the linker to link in standard C libraries at compile time. This means that the static libraries are compiled into the executable
 rather than needing to be dynamically added at runtime. Thus, when we run the assembly there's already a definition of printf in the code. When I removed the 
-flag, all tests that called printf segfaulted. 
+flag, all tests that called printf segfaulted. This is probably because the program will try to dynamically link printf which means that it
+will try to find printf in memory using relative displacement from the PC (%rip), but it will likely be too far away. 
 
 
 
