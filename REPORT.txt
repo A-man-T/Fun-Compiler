@@ -4,7 +4,54 @@
   * What is the runtime for both versions?
   * Try to explain the difference
 
+The runtime for the interpreter is 1 minute and 13 seconds while the runtime for the compiled assembly is .02 seconds. It is worth noting that 
+the compiler time does not include the time it takes for the assembly to be generated, but this time is negligible for this 
+case because each segment of the code is passed at a constant number of times, and the amount of code is relatively small. 
+
+The main difference in runtime comes from the fact that the interpreter is using C code to run the FUN file while the compiler is using assembly. 
+Since the C file contains a linked list data structure and complex functions, the runtime of searching through the data structures and executing loops
+is a lot longer in comparison to the assembly instructions which can execute closer to hardware. So although there's more lines of assembly, they execute
+much faster. 
+
+
+
+
+For reference the program is the following:
+
+ x = 1
+    y = 5
+    z = 3
+    a = 0
+    while(x<20000000){
+        x=x+1
+        y = 7
+        y = y + 1
+        z = x+z
+        a = x+2
+        
+    }
+    print(x)
+
+
+
 - Why is it a good idea to "mov $0,%rax" before calling printf?
+
+Printf is a variadic function and can use vector registers for arguments. The rax register is used to store the number of vector registers used in
+the function and printf will look at %al to know how many registers to store, it is used for optimization. Since we aren't using vector registers
+we should 0 this out for efficiency. 
+
+
+
+Source: https://en.cppreference.com/w/c/variadic
+
+
 
 - Why does my implementation of p3.c use the "-static" gcc flag? Do your best
   to explain the reason. Try to remove the flag and see the what happens
+
+The -static gcc flag tells the linker to link in standard C libraries at compile time. This means that the static libraries are compiled into the executable
+rather than needing to be dynamically added at runtime. Thus, when we run the assembly there's already a definition of printf in the code. When I removed the 
+flag, all tests that called printf segfaulted. 
+
+
+
