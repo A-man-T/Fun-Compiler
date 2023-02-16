@@ -1,3 +1,5 @@
+//This is the exact same as the interpreter from p2 used only for cases where we can employ the technique of constant folding
+
 #pragma once
 #include "cslice.h"
 #include "scope.h"
@@ -39,7 +41,6 @@ uint64_t Ie1(bool effects, Interpreter *interp)
         return v.value;
     }
     return 0;
-
 }
 
 // ++ -- unary+ unary- ... (Right)

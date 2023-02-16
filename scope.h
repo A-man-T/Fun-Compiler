@@ -104,34 +104,3 @@ optionalInt findPosition(Slice k){
 
 
 
-void insertPrecompute(localScopeVariables *localScope,Slice k, uint64_t v){
-
-    for(uint64_t i = 0;i<=localScope->filledTo;i++){
-        if(equalsSlice(localScope->names[i],k)){
-            localScope->values[i]=v;
-            return;
-        }
-    }
-    
-    
-    //Resize the array
-    if(localScope->filledTo+1>=localScope->numVariables){
-        if(localScope->numVariables == 0){
-            localScope->numVariables++;
-            localScope->names = (struct Slice *)realloc(localScope->names,sizeof(struct Slice)*localScope->numVariables);
-            localScope-> values = (uint64_t *)realloc(localScope->values,sizeof(uint64_t)*localScope->numVariables);
-            localScope->names[localScope->filledTo] = k;
-            localScope->values[localScope->filledTo] = v;
-            return;
-        }
-        else{
-            localScope->numVariables = localScope->numVariables*2;
-            localScope->names = (struct Slice *)realloc(localScope->names,sizeof(struct Slice)*localScope->numVariables);
-            localScope-> values = (uint64_t *)realloc(localScope->values,sizeof(uint64_t)*localScope->numVariables);
-        }
-    }
-    localScope->filledTo++;
-    localScope->names[localScope->filledTo] = k;
-    localScope->values[localScope->filledTo] = v;
-    return;
-}

@@ -25,11 +25,18 @@ struct Interpreter;
 uint64_t expression(bool effects, Interpreter *interp);
 void statements(bool effects, Interpreter *interp);
 void runFunction(bool effects, Interpreter *interp, optionalSlice id);
+bool checkComments(Interpreter *interp);
 
 void skip(Interpreter *interp)
 {
     while (isspace(*interp->current))
     {
+        if (*interp->current == '\n'&&*(interp->current+1)=='#'){
+            interp->current++;
+            checkComments(interp);
+        }
+            
+
         interp->current += 1;
     }
 }
@@ -185,7 +192,6 @@ uint64_t e1(bool effects, Interpreter *interp)
         printf("      mov $%lu,%%r13\n", v.value);
         puts("      push %r13");
 
-        // puts("      mov $" (char)v);
         return v.value;
     }
 
@@ -234,7 +240,7 @@ uint64_t e1(bool effects, Interpreter *interp)
             printf("      mov %i(%%rbp),%%rdi", offset);
             printf("\n");
             puts("      push %rdi");
-            //uint64_t x = find(id.value).value;
+
             return 1;
         }
     }
