@@ -25,21 +25,11 @@ struct Interpreter;
 uint64_t expression(bool effects, Interpreter *interp);
 void statements(bool effects, Interpreter *interp);
 void runFunction(bool effects, Interpreter *interp, optionalSlice id);
-//bool checkComments(Interpreter *interp);
 
 void skip(Interpreter *interp)
 {
     while (isspace(*interp->current))
     {
-        /*
-        // This code checks for a # at the start of the line and skips the line for comments
-        if (*interp->current == '\n' && *(interp->current + 1) == '#')
-        {
-            interp->current++;
-            checkComments(interp);
-        }
-        */
-
         interp->current += 1;
     }
 }
@@ -88,19 +78,6 @@ void skipCurlyBraces(bool effects, Interpreter *interp)
         }
     }
 }
-/*
-// Skips the interp->current to past the comment
-bool checkComments(Interpreter *interp)
-{
-    while (!(*interp->current == '\n') && !(*interp->current == 0))
-    {
-        interp->current++;
-    }
-    if (*interp->current == 0)
-        return false;
-    return true;
-}
-*/
 
 noreturn void fail(Interpreter *interp)
 {
@@ -581,13 +558,6 @@ uint64_t expression(bool effects, Interpreter *interp)
 
 bool statement(bool effects, Interpreter *interp)
 {
-    /*
-    // checks for comments
-    if (consume("#", interp))
-    {
-        return checkComments(interp);
-    }
-    */
 
     optionalSlice id = consume_identifier(interp);
 
@@ -832,7 +802,7 @@ void runFunction(bool effects, Interpreter *interp, optionalSlice id)
 
 int main()
 {
-    // Read the file into a buffer
+    // Read the file into a buffer and ignore comments
     uint64_t inputLen = 10000;
     char *prog = (char *)(malloc(sizeof(char) * inputLen));
     char c;
@@ -840,13 +810,16 @@ int main()
     bool comment = 0;
     while ((c = getchar()) != EOF)
     {
-        if(c=='#'){
+        if (c == '#')
+        {
             comment = 1;
         }
-        if(c=='\n'){
+        if (c == '\n')
+        {
             comment = 0;
         }
-        if(!comment){
+        if (!comment)
+        {
             prog[index++] = c;
         }
     }
